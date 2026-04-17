@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+
+<h3>{{titulo}}</h3>
+
+
+
+{% if tipo_relatorio == 'obras' %}
+
+<div class="legenda-status mb-3">
+
+    <b>Status das Obras:</b>
+
+    <span class="status-item">
+        <span class="status-dot GREEN"></span> 0% - 40%
+    </span>
+
+    <span class="status-item">
+        <span class="status-dot YELLOW"></span> 40% - 70%
+    </span>
+
+    <span class="status-item">
+        <span class="status-dot ORANGE"></span> 70% - 100%
+    </span>
+
+    <span class="status-item">
+        <span class="status-dot RED"></span> Atrasado
+    </span>
+
+</div>
+
+{% endif %}
+
+<form method="get" class="row g-3 mb-3">
+
+{% if config.usar_tipo_data %}
+<div class="mb-3">
+
+<label><b>Filtrar por:</b></label><br>
+
+<input type="radio" name="tipo_data" value="emissao"
+{% if tipo_data == 'emissao' %}checked{% endif %}> Emissão
+
+<input type="radio" name="tipo_data" value="vencimento"
+{% if tipo_data == 'vencimento' %}checked{% endif %}> Vencimento
+
+<input type="radio" name="tipo_data" value="pagamento"
+{% if tipo_data == 'pagamento' %}checked{% endif %}> Pagamento
+
+</div>
+
+
+{% endif %}
+
+<div class="col-auto">
+<label>Data Inicial</label>
+<input type="date" name="data_ini" value="{{data_ini}}" class="form-control">
+</div>
+
+<div class="col-auto">
+<label>Data Final</label>
+<input type="date" name="data_fim" value="{{data_fim}}" class="form-control">
+</div>
+
+{% if tipo_relatorio == 'saldo_estoque' %}
+<div class="col-auto align-self-end">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="estoque_negativo"
+               {% if request.args.get('estoque_negativo') == 'on' %}checked{% endif %}>
+        <label class="form-check-label">
+            Somente estoque negativo
+        </label>
+    </div>
+</div>
+{% endif %}
+
+<div class="col-auto align-self-end">
+<button class="btn btn-primary">Filtrar</button>
+</div>
+
+{% if config.usar_cliente %}
+<div class="col-auto">
+<label>Cliente</label>
+<select name="cliente" class="form-control">
+    <option value="">Todos</option>
+    {% for c in clientes_lista %}
+        <option value="{{c}}" {% if c == cliente %}selected{% endif %}>
+            {{c}}
+        </option>
+    {% endfor %}
+</select>
+</div>
+{% endif %}
+
+{% if config.usar_empresa %}
+<div class="col-auto">
+<label>Empresa</label>
+<select name="empresa" class="form-control">
+    <option value="">Todas</option>
+    {% for e in empresas_lista %}
+        <option value="{{e}}" {% if e == empresa %}selected{% endif %}>
+            {{e}}
+        </option>
+    {% endfor %}
+</select>
+</div>
+{% endif %}
+
+
+
+</form>
+
+<style>
+
+
+
+.status-dot {
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cores */
+.status-dot.RED { background-color: #e74c3c; }
+.status-dot.ORANGE { background-color: #f39c12; }
+.status-dot.YELLOW { background-color: #f1c40f; }
+.status-dot.GREEN { background-color: #2ecc71; }
+
+td {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+th {
+    white-space: nowrap;
+}
+
+.linha-atrasada td{
+    background-color: #f8d7da !important;
+}
+
+.linha-hoje td{
+    background-color: #fff3cd !important;
+}
+
+.linha-futura td{
+    background-color: #d1ecf1 !important;
+}
+
+.linha-paga td{
+    background-color: #3ea857 !important; /* verde claro */
+}
+
+.legenda-status {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+
+</style>
+
+
+
+
+
+
+<link rel="stylesheet"
+href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<link rel="stylesheet"
+href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<div class="tabela-container">
+
+<table id="tabela" class="table table-striped table-bordered">
+
+<thead>
+
+<tr>
+{% for col in colunas %}
+    <th>{{ col }}</th>
+{% endfor %}
+<th>Info</th> <!-- NOVO -->
+</tr>
+
+
+</thead>
+</thead>
+
+<tbody>
+
+{% for linha in dados %}
+
+<tr class="
+{% if linha.pago %}
+
+    linha-paga
+
+{% elif linha.dtvenc_obj is defined %}
+
+    {% if linha.dtvenc_obj < data_hoje %}
+        linha-atrasada
+    {% elif linha.dtvenc_obj == data_hoje %}
+        linha-hoje
+    {% else %}
+        linha-futura
+    {% endif %}
+
+{% endif %}
+">
+
+{% for col in colunas %}
+    <td title="{{linha[col]}}">
+
+        
+
+        {% if tipo_relatorio == 'obras' and col == 'status_cor' %}
+
+            <span class="status-dot {{ linha[col] }}"></span>
+
+        {% else %}
+
+            {{ linha[col] }}
+
+        {% endif %}
+
+    </td>
+{% endfor %}
+
+<td>
+            <button class="btn btn-sm btn-info"
+                onclick="abrirFollowup('{{linha.clas}}', '{{linha.ncont}}')">
+                ℹ️
+            </button>
+        </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+<div class="modal fade" id="modalFollowup" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Follow-up</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="conteudoFollowup">
+        Carregando...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+$(document).ready(function(){
+
+$('#tabela').DataTable({
+
+pageLength: 25,
+
+dom: 'Bfrtip',
+
+buttons: [
+'excel',
+'copy'
+],
+
+language: {
+url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
+}
+
+});
+
+});
+
+</script>
+
+<script>
+function abrirFollowup(clas, ncont) {
+
+    fetch(`/api/followup?clas=${clas}&ncont=${ncont}`)
+        .then(res => res.json())
+        .then(data => {
+
+            let html = "";
+
+            if (data.dados.length === 0) {
+                html = "<p>Nenhum follow-up encontrado.</p>";
+            } else {
+                data.dados.forEach(f => {
+                    html += `
+                        <div style="margin-bottom:10px">
+                            <b>${f.nomenf}</b><br>
+                            ${f.obs}
+                        </div>
+                        <hr>
+                    `;
+                });
+            }
+
+            document.getElementById("conteudoFollowup").innerHTML = html;
+
+            let modal = new bootstrap.Modal(document.getElementById('modalFollowup'));
+            modal.show();
+        });
+}
+</script>
+
+{% endblock %}

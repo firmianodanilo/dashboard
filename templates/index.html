@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h2>Filtros</h2>
+
+<form method="get" class="row mb-4">
+
+    <!-- DATA INÍCIO -->
+    <div class="col-md-2">
+        <label>Data Inicial</label>
+        <input type="date" name="data_ini" class="form-control" value="{{ data_ini }}">
+    </div>
+
+    <!-- DATA FIM -->
+    <div class="col-md-2">
+        <label>Data Final</label>
+        <input type="date" name="data_fim" class="form-control" value="{{ data_fim }}">
+    </div>
+
+    <!-- EMPRESA MULTISELECT -->
+    <div class="col-md-4">
+        <label>Empresa</label>
+        <select name="empresa" multiple class="form-control">
+            {% for emp in empresas_lista %}
+                <option value="{{ emp }}"
+                    {% if emp in empresas_selecionadas %}selected{% endif %}>
+                    {{ emp }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- BOTÃO -->
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            🔍 Filtrar
+        </button>
+    </div>
+
+</form>
+
+<h3 class="mt-4">Contas a Receber</h3>
+
+<div class="row mb-4">
+
+<div class="col-md-3">
+<div class="card text-white bg-success">
+<div class="card-body">
+<h5>🟢 Recebidos ({{data_hoje.year}})</h5>
+<h3>R$ {{resumo_receber.recebidos}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-danger">
+<div class="card-body">
+<h5>🔴 Atrasados</h5>
+<h3>R$ {{resumo_receber.atrasados}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-dark bg-warning">
+<div class="card-body">
+<h5>🟡 Hoje</h5>
+<h3>R$ {{resumo_receber.hoje}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-info">
+<div class="card-body">
+<h5>🔵 A vencer</h5>
+<h3>R$ {{resumo_receber.futuros}}</h3>
+</div>
+</div>
+</div>
+
+</div>
+
+<h3 class="mt-4">Contas a Pagar</h3>
+
+<div class="row mb-4">
+
+<div class="col-md-3">
+<div class="card text-white bg-success">
+<div class="card-body">
+<h5>Pagos ({{data_hoje.year}})</h5>
+<h3>R$ {{resumo.pagos}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-danger">
+<div class="card-body">
+<h5>Atrasados</h5>
+<h3>R$ {{resumo.atrasados}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-dark bg-warning">
+<div class="card-body">
+<h5>Vencem Hoje</h5>
+<h3>R$ {{resumo.hoje}}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-info">
+<div class="card-body">
+<h5>A Vencer</h5>
+<h3>R$ {{resumo.futuros}}</h3>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- 📊 GRÁFICO -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5>📈 Fluxo Mensal - Realizado ({{data_hoje.year}})</h5>
+        <canvas id="graficoMensal" style="max-height: 300px;"></canvas>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h5>📊 Vendas Mensais ({{data_hoje.year}})</h5>
+
+        <div style="height: 300px;">
+            <canvas id="graficoVendas"></canvas>
+        </div>
+
+    </div>
+</div>
+
+<!-- 📊 SCRIPT FORA DO CARD -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% block scripts %}
+<script>
+const ctx = document.getElementById('graficoMensal');
+
+
+new Chart(ctx, {
+    data: {
+        labels: [
+            'Jan','Fev','Mar','Abr','Mai','Jun',
+            'Jul','Ago','Set','Out','Nov','Dez'
+        ],
+        datasets: [
+            {
+                type: 'bar',
+                label: 'Recebido',
+                data: {{ recebidos_mensal | tojson }},
+                backgroundColor: 'rgba(40, 167, 69, 0.7)'
+            },
+            {
+                type: 'bar',
+                label: 'Pago',
+                data: {{ pagos_mensal | tojson }},
+                backgroundColor: 'rgba(220, 53, 69, 0.7)'
+            },
+            {
+                type: 'line',
+                label: 'Prev. Receber',
+                data: {{ previsao_receber | tojson }},
+                borderColor: 'blue',
+                tension: 0.3
+            },
+            {
+                type: 'line',
+                label: 'Prev. Pagar',
+                data: {{ previsao_pagar | tojson }},
+                borderColor: 'red',
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<script>
+const ctxVendas = document.getElementById('graficoVendas');
+
+new Chart(ctxVendas, {
+    type: 'bar',
+    data: {
+        labels: [
+            'Jan','Fev','Mar','Abr','Mai','Jun',
+            'Jul','Ago','Set','Out','Nov','Dez'
+        ],
+        datasets: [
+            {
+                label: 'Vendas',
+                data: {{ vendas | tojson }},
+                backgroundColor: 'rgba(0, 123, 255, 0.7)'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                formatter: function(value) {
+                    return 'R$ ' + value.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2
+                    });
+                }
+            }
+        }
+    },
+    plugins: [ChartDataLabels] // 🔥 ESSENCIAL
+});
+</script>
+{% endblock %}
+<hr>
+
+
+
+{% endblock %}
+

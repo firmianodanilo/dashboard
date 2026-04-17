@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Relatórios</title>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- 🔵 MENU LATERAL -->
+        <div class="col-md-2 bg-dark text-white vh-100 p-3">
+
+           <h6 class="mt-3">📊 Dashboards</h6>
+            <ul class="nav flex-column mb-3">
+                <li>
+                    <a class="nav-link text-white" href="/dashboard/financeiro">
+                        📊 Financeiro
+                    </a>
+                </li>
+            </ul>
+
+            <h6>📄 Relatórios</h6>
+            <ul class="nav flex-column">
+                {% for rel in relatorios %}
+                <li>
+                    <a class="nav-link text-white" href="/relatorio/{{rel}}">
+                        📄 {{rel}}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- 🟢 CONTEÚDO PRINCIPAL -->
+        <div class="col-md-10 p-4">
+
+            {% if request.path != '/' %}
+                <a href="/" class="btn btn-secondary mb-3">
+                     ← Voltar
+                </a>
+            {% endif %}
+
+            {% block conteudo %}
+            {% endblock %}
+
+        </div>
+
+    </div>
+</div>
+
+
+
+{% block scripts %}{% endblock %}
+
+</body>
+
+</html>
+
+<style>
+
+.grafico-container {
+    height: 300px;
+    position: relative;
+}
+
+.card {
+    border-radius: 10px;
+}
+
+.tabela-container{
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+th{
+    position: sticky;
+    top: 0;
+    background: #343a40;
+    color: white;
+    z-index: 10;
+}
+
+td{
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+table.dataTable th:first-child,
+table.dataTable td:first-child{
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 2;
+}
+
+table.dataTable th:first-child{
+    z-index: 3;
+}
+
+table {
+    width: 100% !important;
+}
+
+
+
+</style>

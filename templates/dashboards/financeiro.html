@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block conteudo %}
+
+<h2>Filtros</h2>
+
+<form method="get" class="row mb-4">
+
+    <!-- DATA INÍCIO -->
+    <div class="col-md-2">
+        <label>Data Inicial</label>
+        <input type="date" name="data_ini" class="form-control" value="{{ data_ini }}">
+    </div>
+
+    <!-- DATA FIM -->
+    <div class="col-md-2">
+        <label>Data Final</label>
+        <input type="date" name="data_fim" class="form-control" value="{{ data_fim }}">
+    </div>
+
+   <!-- EMPRESA MULTISELECT -->
+    <div class="col-md-4">
+        <label>Empresa</label>
+        <select name="empresa" multiple class="form-control">
+            {% for emp in empresas_lista %}
+                <option value="{{ emp }}"
+                    {% if emp in empresas_selecionadas %}selected{% endif %}>
+                    {{ emp }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- BOTÃO -->
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            🔍 Filtrar
+        </button>
+    </div>
+
+</form>
+
+<h2>Dashboard Financeiro</h2>
+
+
+<!-- 💰 KPIs -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card p-3">
+            <h6>Saldo Atual</h6>
+            <h3>R$ {{ saldo }}</h3>
+        </div>
+    </div>
+   <div class="col-md-3">
+    <div class="card p-3">
+        <h6>💳 Conciliado</h6>
+        <h3>R$ {{ conciliado }}</h3>
+    </div>
+    </div>
+
+    <div class="col-md-3">
+    <div class="card p-3">
+        <h6>⚠️ Não Conciliado</h6>
+        <h3>R$ {{ pendente }}</h3>
+    </div>
+</div>
+</div>
+
+<!-- 📊 GRÁFICOS -->
+<div class="row">
+
+    <!-- Plano -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5>Total por Plano</h5>
+                <div class="grafico-container">
+                    <canvas id="graficoPlano"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banco -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5>% por Plano</h5>
+                <div class="grafico-container">
+                    <canvas id="graficoBanco"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 📈 Evolução -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5>Evolução Mensal</h5>
+        <div class="grafico-container">
+            <canvas id="graficoMes"></canvas>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // 📊 Plano
+    new Chart(document.getElementById('graficoPlano'), {
+        type: 'bar',
+        data: {
+            labels: {{ planos | default([]) | tojson }},
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: {{ entrada | default([]) | tojson }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)'
+                },
+                {
+                    label: 'Saídas',
+                    data: {{ saida | default([]) | tojson }},
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: function(value) {
+                        return 'R$ ' + value.toFixed(2);
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+    // 🥧 Banco
+    new Chart(document.getElementById('graficoBanco'), {
+        type: 'pie',
+        data: {
+            labels: {{ bancos | default([]) | tojson }},
+            datasets: [{
+                data: {{ valores_banco | default([]) | tojson }}
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    formatter: (value, context) => {
+                        let dados = context.chart.data.datasets[0].data;
+                        let total = dados.length ? dados.reduce((a, b) => a + b, 0) : 0;
+                        let percent = (value / total * 100).toFixed(1);
+                        return percent + '%';
+                    },
+                    color: '#fff'
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // 📈 Mensal
+    new Chart(document.getElementById('graficoMes'), {
+        type: 'line',
+        data: {
+            labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: {{ meses_entrada | default([]) | tojson }},
+                    borderColor: 'green',
+                    tension: 0.3
+                },
+                {
+                    label: 'Saídas',
+                    data: {{ meses_saida | default([]) | tojson }},
+                    borderColor: 'red',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+});
+
+</script>
+
+{% endblock %}
