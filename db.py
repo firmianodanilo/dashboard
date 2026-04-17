@@ -7,7 +7,7 @@ def conectar():
         user='SYSDBA',
         password='masterkey',
         charset='UTF8',
-        fb_library_name=r"C:\Program Files\Firebird\Firebird_2_5\bin\fbclient.dll"
+        
     )
 
     return con
