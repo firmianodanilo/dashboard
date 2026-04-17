@@ -7,7 +7,7 @@ def conectar():
         user='SYSDBA',
         password='masterkey',
         charset='UTF8',
-        
+        sql_dialect=3        
     )
 
     return con
